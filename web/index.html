@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -29,7 +30,30 @@
   <title>flutter_raven</title>
   <link rel="manifest" href="manifest.json">
 </head>
+
 <body>
+
+  <!-- Connection to the Firebase project-2---raven -->
+  <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-storage.js"></script>
+  <script>
+    // Your web app's Firebase configuration
+    var firebaseConfig = {
+      apiKey: "AIzaSyCIbrJ27OHLkJX4JrXT6GGzqIniqlBbgvg",
+      authDomain: "project-2---raven.firebaseapp.com",
+      projectId: "project-2---raven",
+      storageBucket: "project-2---raven.appspot.com",
+      messagingSenderId: "52922648048",
+      appId: "1:52922648048:web:2f77cee6ccdb89ca060935",
+      measurementId: "G-G6L5S2FKQL"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
+
   <!-- This script installs service_worker.js to provide PWA functionality to
        application. For more information, see:
        https://developers.google.com/web/fundamentals/primers/service-workers -->
@@ -98,4 +122,5 @@
     }
   </script>
 </body>
+
 </html>
