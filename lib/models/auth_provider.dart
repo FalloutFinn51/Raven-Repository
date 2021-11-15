@@ -1,4 +1,4 @@
-import 'package:cloud/models/auth.dart';
+import 'package:flutter_raven/models/auth.dart';
 import 'package:flutter/cupertino.dart';
 
 class AuthProvider extends InheritedWidget {
