@@ -1,11 +1,11 @@
 import 'dart:typed_data';
-import 'package:flutter_raven/models/firebase_api.dart';
+import 'package:flutter_raven/classes/firebase_api.dart';
 import 'package:flutter_raven/models/firebase_file.dart';
 import 'package:flutter_raven/pages/image_page.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_raven/models/auth_provider.dart';
+import 'package:flutter_raven/classes/auth_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);

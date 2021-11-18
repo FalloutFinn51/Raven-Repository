@@ -1,4 +1,4 @@
-import 'package:flutter_raven/models/auth_provider.dart';
+import 'package:flutter_raven/classes/auth_provider.dart';
 import 'package:flutter_raven/pages/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_raven/pages/login_page.dart';

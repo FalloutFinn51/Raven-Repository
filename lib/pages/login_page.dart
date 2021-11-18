@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_raven/models/auth_provider.dart';
+import 'package:flutter_raven/classes/auth_provider.dart';
 
 class EmailFieldValidator {
   static String? validate(String value) {
