@@ -1,16 +1,16 @@
 import 'package:firebase_storage/firebase_storage.dart';
 
 class FirebaseFile {
-  final Reference ref;
+  final String path;
   final String name;
   final String url;
-  // final Future<Set<int?>> size;
-  final Future<Set<DateTime?>> dateCreated;
+  final String dateCreated;
+  final String id;
 
   const FirebaseFile(
       {required this.name,
-      required this.ref,
+      required this.path,
       required this.url,
-      required this.dateCreated});
-  // required this.size});
+      required this.dateCreated,
+      required this.id});
 }

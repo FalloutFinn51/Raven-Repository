@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:typed_data';
+import 'package:flutter_raven/classes/auth.dart';
 import 'package:flutter_raven/classes/firebase_api.dart';
 import 'package:flutter_raven/models/firebase_file.dart';
 import 'package:flutter_raven/pages/image_page.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_raven/classes/auth_provider.dart';
@@ -15,13 +18,27 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late Future<List<FirebaseFile>> futureFiles;
+  final database = FirebaseDatabase(
+          databaseURL:
+              "https://cloud-a8697-default-rtdb.europe-west1.firebasedatabase.app/")
+      .reference();
+  late List<FirebaseFile> streamList;
   UploadTask? task;
+  late String currentUser;
 
   @override
   void initState() {
     super.initState();
-    futureFiles = FirebaseAPI.listAll('photos/');
+    setUserUID();
+  }
+
+  @override
+  void deactivate() {
+    super.deactivate();
+  }
+
+  void setUserUID() {
+    currentUser = Auth().userUIDret();
   }
 
   void _signOut(BuildContext context) async {
@@ -35,13 +52,22 @@ class _HomePageState extends State<HomePage> {
 
   Future selectFile() async {
     try {
-      //Check Into Uploading Multiple Files now.
-      FilePickerResult? result =
-          await FilePicker.platform.pickFiles(allowMultiple: true);
-
+      Uint8List? fileBytes;
+      String fileName = "";
+      FilePickerResult? result = await FilePicker.platform
+          .pickFiles(allowMultiple: true, type: FileType.image);
       if (result != null) {
-        Uint8List? fileBytes = result.files.first.bytes;
-        String fileName = result.files.first.name;
+        if (result.files.length > 1) {
+          for (var element in result.files) {
+            fileBytes = element.bytes;
+            fileName = element.name;
+            uploadFile(fileBytes, fileName);
+          }
+        } else {
+          fileBytes = result.files.first.bytes;
+          fileName = result.files.first
+              .name; //Change File name selected to GUID to upload and keep file names in storage unique
+        }
 
         uploadFile(fileBytes, fileName);
       }
@@ -58,6 +84,24 @@ class _HomePageState extends State<HomePage> {
     setState(() {});
 
     if (task == null) return;
+
+    final snapshot = await task!.whenComplete(() => null);
+    final downloadUrl = await snapshot.ref.getDownloadURL();
+
+    try {
+      final photoRecord = <String, dynamic>{
+        'path': destination,
+        'imageName': name,
+        'url': downloadUrl,
+        'dateCreated': DateTime.now().toIso8601String()
+      };
+
+      //move to api
+      //
+      FirebaseAPI.pushPhotoToDatabase(photoRecord, currentUser);
+    } catch (e) {
+      print(e); //Create alerts for these.
+    }
   }
 
   Widget buildUploadStatus(UploadTask task) => StreamBuilder<TaskSnapshot>(
@@ -67,14 +111,17 @@ class _HomePageState extends State<HomePage> {
             final snap = snapsot.data!;
             final progress = snap.bytesTransferred / snap.totalBytes;
             final percentage = (progress * 100).toStringAsFixed(2);
-            return Text("$percentage %");
+            return Text(
+                "$percentage %"); //Changes Upload Status to alert same as errors.
           } else {
             return Container();
           }
         },
       );
 
-  Widget buildGrid(BuildContext context, FirebaseFile file) => GridTile(
+  Widget buildGrid(BuildContext context, FirebaseFile file) {
+    return Draggable(
+      child: GridTile(
         child: GestureDetector(
           child: Padding(
             padding: const EdgeInsets.all(8.0),
@@ -87,7 +134,20 @@ class _HomePageState extends State<HomePage> {
           onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (context) => ImagePage(file: file))),
         ),
-      );
+      ),
+      feedback: Container(
+        alignment: Alignment.center,
+        child: Column(
+          children: [
+            Image.asset('assets/images/placeholder.png'),
+          ],
+        ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(5)),
+        width: 48,
+        height: 48,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,24 +158,41 @@ class _HomePageState extends State<HomePage> {
           task != null ? buildUploadStatus(task!) : Container(),
         ],
       ),
-      body: FutureBuilder<List<FirebaseFile>>(
-          future: futureFiles,
-          builder: (context, snapshot) {
-            switch (snapshot.connectionState) {
-              case ConnectionState.waiting:
-                return const Center(
-                  child: CircularProgressIndicator(),
-                );
-              default:
-                if (snapshot.hasError) {
-                  return const Center(
-                    child: Text("Some Errors"),
-                  );
-                } else {
-                  final files = snapshot.data;
+      body: StreamBuilder(
+        stream: database.child('users/$currentUser/photos').onValue,
+        builder: (context, snapshot) {
+          switch (snapshot.connectionState) {
+            case ConnectionState.waiting:
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            default:
+              if (snapshot.hasData) {
+                final snapDataEvent = snapshot.data as Event;
+                final dataEventValues = snapDataEvent.snapshot.value;
+                if (dataEventValues != null) {
+                  final data = Map<String, dynamic>.from(dataEventValues);
+
+                  streamList = data
+                      .map((key, value) {
+                        final id = key;
+                        final name = value["imageName"] as String;
+                        final date = value["dateCreated"] as String;
+                        final url = value["url"] as String;
+                        final path = value["path"] as String;
+                        final file = FirebaseFile(
+                            name: name,
+                            dateCreated: date,
+                            url: url,
+                            id: id,
+                            path: path);
+                        return MapEntry(key, file);
+                      })
+                      .values
+                      .toList();
 
                   return GridView.builder(
-                      itemCount: files!.length,
+                      itemCount: streamList.length,
                       gridDelegate:
                           const SliverGridDelegateWithMaxCrossAxisExtent(
                               maxCrossAxisExtent: 200,
@@ -123,12 +200,22 @@ class _HomePageState extends State<HomePage> {
                               childAspectRatio: 3 / 2,
                               mainAxisSpacing: 20),
                       itemBuilder: (context, index) {
-                        final file = files[index];
+                        final file = streamList[index];
                         return buildGrid(context, file);
                       });
+                } else {
+                  return const Center(
+                    child: Text("You have no files"),
+                  );
                 }
-            }
-          }),
+              } else {
+                return const Center(
+                  child: Text("You have no files"),
+                );
+              }
+          }
+        },
+      ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
