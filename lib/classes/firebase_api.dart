@@ -17,7 +17,7 @@ class FirebaseAPI {
   static Future<void> deleteImage(String key, String currentUser) async {
     final database = FirebaseDatabase(
             databaseURL:
-                "https://cloud-a8697-default-rtdb.europe-west1.firebasedatabase.app/")
+                "https://project-2---raven-default-rtdb.europe-west1.firebasedatabase.app/")
         .reference();
     return database.child('users/$currentUser/photos/$key').remove();
   }
@@ -31,9 +31,18 @@ class FirebaseAPI {
       Map<String, dynamic> record, String currentUser) async {
     final database = FirebaseDatabase(
             databaseURL:
-                "https://cloud-a8697-default-rtdb.europe-west1.firebasedatabase.app/")
+                "https://project-2---raven-default-rtdb.europe-west1.firebasedatabase.app/")
         .reference();
     final childNode = database.child('users/$currentUser/photos');
     await childNode.push().set(record);
+  }
+
+  static Future<void> createFolder(String folder, currentUser) async {
+    final database = FirebaseDatabase(
+            databaseURL:
+                "https://project-2---raven-default-rtdb.europe-west1.firebasedatabase.app/")
+        .reference();
+    final childNode = database.child('users/$currentUser/$folder');
+    await childNode.set("blankFolder");
   }
 }
