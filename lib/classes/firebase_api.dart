@@ -49,7 +49,7 @@ class FirebaseAPI {
                 "https://project-2---raven-default-rtdb.europe-west1.firebasedatabase.app/")
         .reference();
     final dateMod = DateTime.now().toIso8601String();
-    final childNode = database.child("users/$currentUser/root");
+    final childNode = database.child("users/$currentUser/root/$key");
     await childNode.update({'imageName': newname, 'dateModified': dateMod});
   }
 

@@ -29,6 +29,7 @@ class PictureGrid extends StatelessWidget {
               final dataEventValues = snapDataEvent.snapshot.value;
               if (dataEventValues != null) {
                 final data = Map<String, dynamic>.from(dataEventValues);
+                print(dataEventValues);
 
                 streamList = data
                     .map((key, value) {
