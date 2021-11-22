@@ -48,6 +48,7 @@ class Auth implements BaseAuth {
     return finalUser;
   }
 
+  @override
   String userUIDret() {
     String finalUser = "";
     if (firebaseAuthIns.currentUser != null) {

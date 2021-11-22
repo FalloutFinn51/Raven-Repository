@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_raven/classes/auth_provider.dart';
+import 'package:uuid/uuid.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -52,14 +53,17 @@ class _HomePageState extends State<HomePage> {
       if (result != null) {
         if (result.files.length > 1) {
           for (var element in result.files) {
+            String guid = Uuid().v1();
             fileBytes = element.bytes;
-            fileName = element.name;
+            fileName = "$guid | ${element.name}";
             uploadFile(fileBytes, fileName);
           }
         } else {
+          String guid = Uuid().v1();
+
           fileBytes = result.files.first.bytes;
-          fileName = result.files.first
-              .name; //Change File name selected to GUID to upload and keep file names in storage unique
+          fileName =
+              "$guid | ${result.files.first.name}"; //Change File name selected to GUID to upload and keep file names in storage unique
         }
 
         uploadFile(fileBytes, fileName);
@@ -80,13 +84,17 @@ class _HomePageState extends State<HomePage> {
 
     final snapshot = await task!.whenComplete(() => null);
     final downloadUrl = await snapshot.ref.getDownloadURL();
+    final indexOfPoint = name.lastIndexOf(".");
+    final extention = name.substring(indexOfPoint);
 
     try {
       final photoRecord = <String, dynamic>{
         'path': destination,
         'imageName': name,
         'url': downloadUrl,
-        'dateCreated': DateTime.now().toIso8601String()
+        'extention': extention,
+        'dateCreated': DateTime.now().toIso8601String(),
+        'dateModified': DateTime.now().toIso8601String()
       };
 
       //move to api
@@ -112,8 +120,6 @@ class _HomePageState extends State<HomePage> {
         },
       );
 
-  // TODO Move this stream to widget folder and own file. Can use inside each folder/album created
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -124,24 +130,25 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: Column(children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  TextButton.icon(
-                      onPressed: () {
-                        FirebaseAPI.createFolder("album", currentUser);
-                      },
-                      icon: const Icon(Icons.add_box),
-                      label: const Text("Create Folder"))
-                ],
-              ),
-            )
-          ],
-        ),
+        Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextButton.icon(
+                onPressed: () {
+                  FirebaseAPI.createFolder("album", currentUser);
+                },
+                icon: const Icon(Icons.add_box),
+                label: const Text("Create Folder")),
+          ),
+          // TODO change to loop element after all nodes pulled form root folder included
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.folder),
+                label: const Text("FolderNameHere")),
+          )
+        ]),
         Expanded(child: PictureGrid(currentUser: currentUser))
       ]),
       drawer: Drawer(

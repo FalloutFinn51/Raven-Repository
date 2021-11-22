@@ -27,6 +27,7 @@ class _LoginPageState extends State<LoginPage> {
   String _password = "";
   Formtype _formType = Formtype.login;
   final formKey = GlobalKey<FormState>();
+
   bool validateAndSave() {
     final form = formKey.currentState;
     if (form!.validate()) {
@@ -46,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
           await auth!.createUserWithEmailAndPassword(_email, _password);
         }
       } catch (e) {
-        print('Error $e');
+        print('Login Error $e');
         // Handle errors here
       }
     }
@@ -60,8 +61,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void moveToLogin() {
+    formKey.currentState!.reset();
     setState(() {
-      formKey.currentState!.reset();
       _formType = Formtype.login;
     });
   }
