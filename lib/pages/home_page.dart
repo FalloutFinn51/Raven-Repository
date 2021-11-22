@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter_raven/classes/auth.dart';
 import 'package:flutter_raven/classes/firebase_api.dart';
+import 'package:flutter_raven/widgets/alert_dialog.dart';
+import 'package:flutter_raven/widgets/folder_line_grid.dart';
 import 'package:flutter_raven/widgets/photos_grid.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -14,16 +16,29 @@ class HomePage extends StatefulWidget {
 
   @override
   State<HomePage> createState() => _HomePageState();
+
+  static _HomePageState? of(BuildContext context) =>
+      context.findAncestorStateOfType<_HomePageState>();
 }
 
 class _HomePageState extends State<HomePage> {
   UploadTask? task;
+  String currentFolder = "root";
   late String currentUser;
-
   @override
   void initState() {
     super.initState();
+
     setUserUID();
+  }
+
+  String getCurrentFolder() {
+    return currentFolder;
+  }
+
+  void setCurrentFolder(String folder) {
+    currentFolder = folder;
+    setState(() {});
   }
 
   @override
@@ -40,8 +55,20 @@ class _HomePageState extends State<HomePage> {
       var auth = AuthProvider.of(context)!.auth;
       await auth!.signOut();
     } catch (e) {
-      print(e);
+      _displayTextInputDialog(context, 2, "Logout Error $e");
     }
+  }
+
+  Future<void> _displayTextInputDialog(
+      BuildContext context, int newState, String message) async {
+    return showDialog(
+        context: context,
+        builder: (context) {
+          return Alert(
+            meassage: message,
+            alertState: newState,
+          );
+        });
   }
 
   Future selectFile() async {
@@ -53,23 +80,22 @@ class _HomePageState extends State<HomePage> {
       if (result != null) {
         if (result.files.length > 1) {
           for (var element in result.files) {
-            String guid = Uuid().v1();
+            String guid = const Uuid().v1();
             fileBytes = element.bytes;
             fileName = "$guid | ${element.name}";
             uploadFile(fileBytes, fileName);
           }
         } else {
-          String guid = Uuid().v1();
+          String guid = const Uuid().v1();
 
           fileBytes = result.files.first.bytes;
-          fileName =
-              "$guid | ${result.files.first.name}"; //Change File name selected to GUID to upload and keep file names in storage unique
+          fileName = "$guid | ${result.files.first.name}";
         }
 
         uploadFile(fileBytes, fileName);
       }
     } catch (e) {
-      print(e);
+      _displayTextInputDialog(context, 2, "Select File Error $e");
     }
   }
 
@@ -81,6 +107,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {});
 
     if (task == null) return;
+    setState(() {});
 
     final snapshot = await task!.whenComplete(() => null);
     final downloadUrl = await snapshot.ref.getDownloadURL();
@@ -97,11 +124,9 @@ class _HomePageState extends State<HomePage> {
         'dateModified': DateTime.now().toIso8601String()
       };
 
-      //move to api
-      //
-      FirebaseAPI.pushPhotoToDatabase(photoRecord, currentUser);
+      FirebaseAPI.pushPhotoToDatabase(photoRecord, currentUser, currentFolder);
     } catch (e) {
-      print(e); //Create alerts for these.
+      _displayTextInputDialog(context, 2, "Upload To Database Error $e");
     }
   }
 
@@ -112,8 +137,9 @@ class _HomePageState extends State<HomePage> {
             final snap = snapsot.data!;
             final progress = snap.bytesTransferred / snap.totalBytes;
             final percentage = (progress * 100).toStringAsFixed(2);
-            return Text(
-                "$percentage %"); //Changes Upload Status to alert same as errors.
+            return Center(
+              child: Text("$percentage %"),
+            );
           } else {
             return Container();
           }
@@ -124,43 +150,41 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Cloud Data"),
+        title: const Text("Raven Cloud"),
         actions: <Widget>[
           task != null ? buildUploadStatus(task!) : Container(),
         ],
       ),
       body: Column(children: [
-        Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextButton.icon(
-                onPressed: () {
-                  FirebaseAPI.createFolder("album", currentUser);
-                },
-                icon: const Icon(Icons.add_box),
-                label: const Text("Create Folder")),
-          ),
-          // TODO change to loop element after all nodes pulled form root folder included
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.folder),
-                label: const Text("FolderNameHere")),
-          )
-        ]),
-        Expanded(child: PictureGrid(currentUser: currentUser))
+        FolderBar(currentUser: currentUser),
+        Expanded(
+            child: PictureGrid(
+          currentUser: currentUser,
+          currentFolder: currentFolder,
+        ))
       ]),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const DrawerHeader(child: Text("Header")),
+            const DrawerHeader(child: Text("Raven Cloud")),
             ListTile(
               title: const Text("Upload Image"),
               leading: const Icon(Icons.upload_rounded),
               onTap: () {
                 selectFile();
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text("Create Folder"),
+              leading: const Icon(Icons.create_new_folder),
+              onTap: () async {
+                await _displayTextInputDialog(
+                  context,
+                  3,
+                  "Create Folder",
+                );
                 Navigator.pop(context);
               },
             ),

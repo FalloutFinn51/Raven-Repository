@@ -1,12 +1,15 @@
 import 'package:flutter_raven/classes/auth.dart';
 import 'package:flutter_raven/classes/firebase_api.dart';
 import 'package:flutter_raven/models/firebase_file.dart';
+import 'package:flutter_raven/widgets/alert_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ImagePage extends StatefulWidget {
+  final String currentFolder;
   final FirebaseFile file;
-  const ImagePage({Key? key, required this.file}) : super(key: key);
+  const ImagePage({Key? key, required this.file, required this.currentFolder})
+      : super(key: key);
 
   @override
   State<ImagePage> createState() => _ImagePageState();
@@ -50,16 +53,25 @@ class _ImagePageState extends State<ImagePage> {
     if (validateAndSave()) {
       try {
         await FirebaseAPI.updateCurrentImage(
-          _newImageName,
-          currentUser,
-          widget.file.id,
-        );
-        moveToBase();
+            _newImageName, currentUser, widget.file.id, widget.currentFolder);
+        // moveToBase(); //Navigate back to current file but get new ref to file.
+        Navigator.pop(context);
       } catch (e) {
-        print('Login Error $e');
-        // Handle errors here
+        _displayTextInputDialog(context, 2, "Edit Error $e");
       }
     }
+  }
+
+  Future<void> _displayTextInputDialog(
+      BuildContext context, int newState, String message) async {
+    return showDialog(
+        context: context,
+        builder: (context) {
+          return Alert(
+            meassage: message,
+            alertState: newState,
+          );
+        });
   }
 
   void moveToEditState() {
@@ -101,7 +113,8 @@ class _ImagePageState extends State<ImagePage> {
               icon: const Icon(Icons.download_rounded)),
           IconButton(
               onPressed: () {
-                FirebaseAPI.deleteImage(widget.file.id, Auth().userUIDret());
+                FirebaseAPI.deleteImage(
+                    widget.file.id, currentUser, widget.currentFolder);
                 FirebaseAPI.deleteImageStorage(widget.file.path);
                 Navigator.pop(context);
               },
@@ -109,51 +122,53 @@ class _ImagePageState extends State<ImagePage> {
         ],
       ),
       body: Center(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Image.network(
-              widget.file.url,
-              fit: BoxFit.contain,
-            ),
-            Form(
-              key: _formKey,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Column(
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          "Image Name",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Text(widget.file.name),
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          "Date Created",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Text(widget.file.dateCreated),
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          "Date Modified",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Text(widget.file.dateModified),
-                    ],
-                  ),
-                ],
+        child: FittedBox(
+          fit: BoxFit.fill,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Image.network(
+                widget.file.url,
               ),
-            )
-          ],
+              Form(
+                key: _formKey,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Column(
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            "Image Name",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        Text(widget.file.name),
+                        const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            "Date Created",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        Text(widget.file.dateCreated),
+                        const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            "Date Modified",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        Text(widget.file.dateModified),
+                      ],
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );

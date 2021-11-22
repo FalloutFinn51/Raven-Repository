@@ -4,8 +4,11 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
 class PictureGrid extends StatelessWidget {
+  final String currentFolder;
   final String currentUser;
-  const PictureGrid({Key? key, required this.currentUser}) : super(key: key);
+  const PictureGrid(
+      {Key? key, required this.currentUser, required this.currentFolder})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +19,7 @@ class PictureGrid extends StatelessWidget {
     late List<FirebaseFile> streamList;
 
     return StreamBuilder(
-      stream: database.child('users/$currentUser/root').onValue,
+      stream: database.child('users/$currentUser/$currentFolder').onValue,
       builder: (context, snapshot) {
         switch (snapshot.connectionState) {
           case ConnectionState.waiting:
@@ -27,9 +30,8 @@ class PictureGrid extends StatelessWidget {
             if (snapshot.hasData) {
               final snapDataEvent = snapshot.data as Event;
               final dataEventValues = snapDataEvent.snapshot.value;
-              if (dataEventValues != null) {
+              if (dataEventValues != null && dataEventValues != "blankFolder") {
                 final data = Map<String, dynamic>.from(dataEventValues);
-                print(dataEventValues);
 
                 streamList = data
                     .map((key, value) {
@@ -93,8 +95,11 @@ class PictureGrid extends StatelessWidget {
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(5)),
             ),
           ),
-          onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => ImagePage(file: file))),
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (context) => ImagePage(
+                    file: file,
+                    currentFolder: currentFolder,
+                  ))),
         ),
       ),
       feedback: Container(

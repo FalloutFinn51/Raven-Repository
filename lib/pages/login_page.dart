@@ -1,3 +1,4 @@
+import 'package:flutter_raven/widgets/alert_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_raven/classes/auth_provider.dart';
 
@@ -37,6 +38,18 @@ class _LoginPageState extends State<LoginPage> {
     return false;
   }
 
+  Future<void> _displayTextInputDialog(
+      BuildContext context, int newState, String message) async {
+    return showDialog(
+        context: context,
+        builder: (context) {
+          return Alert(
+            meassage: message,
+            alertState: newState,
+          );
+        });
+  }
+
   void validateAndSubmit() async {
     if (validateAndSave()) {
       try {
@@ -47,8 +60,7 @@ class _LoginPageState extends State<LoginPage> {
           await auth!.createUserWithEmailAndPassword(_email, _password);
         }
       } catch (e) {
-        print('Login Error $e');
-        // Handle errors here
+        _displayTextInputDialog(context, 2, "Login Error $e");
       }
     }
   }
