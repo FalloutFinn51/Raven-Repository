@@ -1,3 +1,4 @@
+import 'package:flutter_raven/classes/firebase_api.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 
@@ -35,6 +36,7 @@ class Auth implements BaseAuth {
         email: email, password: password);
     final User user = firebaseAuthIns.currentUser!;
     final uid = user.uid;
+    await FirebaseAPI.createUserRecord(email, uid);
     return uid;
   }
 

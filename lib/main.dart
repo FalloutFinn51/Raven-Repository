@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
     return AuthProvider(
       auth: Auth(),
       child: MaterialApp(
-        title: 'Cloud',
+        title: 'Raven Cloud',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blueGrey)
